@@ -1,5 +1,6 @@
 package com.home;
 
+import java.util.*;
 import java.time.Duration;
 import java.util.List;
 
@@ -23,6 +24,7 @@ public class ExtractJobDetails {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         try {
+            JobDetailsDataService jobDetailsDataService = new JobDetailsDataService();
             // Navigate to the website
             driver.get("https://www.simplyhired.co.in/search?q=java&l=hyderabad%2C+telangana");
 
@@ -39,7 +41,9 @@ public class ExtractJobDetails {
                 System.out.println("Page No: " + (nextPageNo - 1));
 
                 // Extract data from the current page
-                extractDataFromPage(driver);
+                List<JobDetail> listOfJobs =  extractDataFromPage(driver);
+
+                jobDetailsDataService.AddJobDetails(listOfJobs);
 
                 String pageXPath = "//a[@aria-label='page " + nextPageNo + "']";
 
@@ -82,7 +86,8 @@ public class ExtractJobDetails {
 
     }
 
-    private static void extractDataFromPage(WebDriver driver) {
+    private static List<JobDetail> extractDataFromPage(WebDriver driver) {
+        List<JobDetail> listOfJobs = new ArrayList<>();
         try {
 
             List<WebElement> items = driver.findElement(By.id("job-list")).findElements(By.tagName("li"));
@@ -102,14 +107,44 @@ public class ExtractJobDetails {
                 List<WebElement> childElements = parentElement.findElements(By.className("css-1ebprri"));
 
                 // Loop through the child elements and extract the required data
-                for (WebElement child : childElements) {
-                    // Get text, attribute, or any other relevant data
-                    String childText = child.getText();
-                    String childAttribute = child.getAttribute("");
+                try {
 
-                    // Print the child data
-                    System.out.println("Child Element Text: " + childText);
-                    // System.out.println("Child Element Attribute: " + childAttribute);
+                       /* //WebElement child : childElements
+                        WebElement child = childElements.get(0);
+                        // Get text, attribute, or any other relevant data
+                        String childText = child.getText();
+                        String childAttribute = child.getAttribute("");
+
+                        // Print the child data
+                        System.out.println("Child Element Text: " + childText);
+                        System.out.println("Child Element Attribute: " + childAttribute);*/
+
+                        String titleLocation = "";
+                        String basicDetails = "";
+                        String qualification = "";
+                        String fullJobDescription = "";
+
+                        if(childElements.size()>0){
+                            titleLocation = childElements.get(0).getText();
+                        }
+
+                        if(childElements.size()>1){
+                            basicDetails = childElements.get(1).getText();
+                        }
+
+                        if(childElements.size()>2){
+                            qualification = childElements.get(2).getText();
+                        }
+
+                        if(childElements.size()>3){
+                            fullJobDescription = childElements.get(3).getText();
+                        }
+
+                        JobDetail jobDetail = new JobDetail(titleLocation, basicDetails, qualification, fullJobDescription);
+                        listOfJobs.add(jobDetail);
+
+                }catch (Exception ex){
+                    ex.printStackTrace();
                 }
 
                 System.out.println("===================================================");
@@ -118,6 +153,7 @@ public class ExtractJobDetails {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
 
+        return listOfJobs;
+    }
 }
