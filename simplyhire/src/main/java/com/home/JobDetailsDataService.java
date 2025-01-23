@@ -20,7 +20,17 @@ public class JobDetailsDataService {
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
 
             // SQL INSERT query to insert JSON data
-            String sql = "INSERT INTO job_detail (title_location, basic_details, qualifications, full_job_description) VALUES (?, ?, ?, ?)";
+            String sql = "INSERT INTO job_detail (id, date_of_posting, company, title, location, title_location, basic_details, qualifications, full_job_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE " +
+                    "date_of_posting = VALUES(date_of_posting), " +
+                    "company = VALUES(company), " +
+                    "title = VALUES(title), " +
+                    "location = VALUES(location), " +
+                    "title_location = VALUES(title_location), " +
+                    "basic_details = VALUES(basic_details), " +
+                    "qualifications = VALUES(qualifications), " +
+                    "full_job_description = VALUES(full_job_description)";
+
 
             for(JobDetail jobDetail : listOfJobs) {
 
@@ -33,17 +43,22 @@ public class JobDetailsDataService {
                     String qualificationsJsonData = "{ \"qualifications\": \"" + jobDetail.getQualifications().replaceAll("[\r\n]+", " ") + "\"}";
                     String fullJobDescJsonData = "{ \"full_job_description\": \"" + jobDetail.getFullJobDescription().replaceAll("[\r\n]+", " ") + "\"}";
 
-                    System.out.println("title_location: " + titleJsonData);
+                    /*System.out.println("title_location: " + titleJsonData);
                     System.out.println("basic_details: " + basicDetailsJsonData);
                     System.out.println("qualifications: " + qualificationsJsonData);
-                    System.out.println("full_job_description: " + fullJobDescJsonData);
+                    System.out.println("full_job_description: " + fullJobDescJsonData);*/
 
 
+                    pstmt.setString(1, jobDetail.getKey());
+                    pstmt.setString(2, jobDetail.getTime());
+                    pstmt.setString(3, jobDetail.getCompany());
+                    pstmt.setString(4, jobDetail.getJobTitle());
+                    pstmt.setString(5, jobDetail.getJobLocation());
                     // Set the JSON data as a string
-                    pstmt.setString(1, titleJsonData);
-                    pstmt.setString(2, basicDetailsJsonData);
-                    pstmt.setString(3, qualificationsJsonData);
-                    pstmt.setString(4, fullJobDescJsonData);
+                    pstmt.setString(6, titleJsonData);
+                    pstmt.setString(7, basicDetailsJsonData);
+                    pstmt.setString(8, qualificationsJsonData);
+                    pstmt.setString(9, fullJobDescJsonData);
 
 
                     // Execute the insert statement
@@ -53,13 +68,18 @@ public class JobDetailsDataService {
                     if (rowsInserted > 0) {
                         System.out.println("A new record was inserted successfully!");
                     }
+
+                    System.out.println("Upserted one record: " + jobDetail.getKey());
+
                 }catch (SQLException ex) {
                     ex.printStackTrace();
+                    System.out.println("Error inserting: " + ex.getMessage());
                 }
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println("Error in DataLayer: " + e.getMessage());
         } finally {
             // Close the database connection
             try {
